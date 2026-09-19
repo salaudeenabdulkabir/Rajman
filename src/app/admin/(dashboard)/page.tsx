@@ -1,34 +1,43 @@
 import Link from "next/link";
 import AdminTopbar from "@/components/admin/AdminTopbar";
-import { mockProducts, mockCategories, mockTestimonials, mockGalleryItems } from "@/lib/data";
+import { fetchProducts, fetchCategories, fetchTestimonials, fetchGalleryItems } from "@/lib/data";
 import { ROUTES } from "@/lib/constants";
 
-export default function AdminOverviewPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminOverviewPage() {
+  const [products, categories, testimonials, galleryItems] = await Promise.all([
+    fetchProducts(),
+    fetchCategories(),
+    fetchTestimonials(),
+    fetchGalleryItems(),
+  ]);
+
   const stats = [
     {
       label: "Total Products",
-      value: mockProducts.length,
+      value: products.length,
       icon: <ProductsIcon />,
       href: ROUTES.adminProducts,
       color: "bg-[#C89B3C]",
     },
     {
       label: "Featured Products",
-      value: mockProducts.filter((p) => p.is_featured).length,
+      value: products.filter((p) => p.is_featured).length,
       icon: <StarIcon />,
       href: ROUTES.adminProducts,
       color: "bg-[#171717]",
     },
     {
       label: "Categories",
-      value: mockCategories.length,
+      value: categories.length,
       icon: <CategoryIcon />,
       href: ROUTES.adminCategories,
       color: "bg-[#6B6B6B]",
     },
     {
       label: "Testimonials",
-      value: mockTestimonials.length,
+      value: testimonials.length,
       icon: <TestimonialIcon />,
       href: ROUTES.adminTestimonials,
       color: "bg-[#EFE7DB]",
@@ -36,7 +45,7 @@ export default function AdminOverviewPage() {
     },
     {
       label: "Gallery Items",
-      value: mockGalleryItems.length,
+      value: galleryItems.length,
       icon: <GalleryIcon />,
       href: ROUTES.adminGallery,
       color: "bg-[#EFE7DB]",

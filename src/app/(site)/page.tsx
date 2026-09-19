@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import SectionHeading from "@/components/site/SectionHeading";
-import { mockCategories, mockProducts, mockGalleryItems, mockTestimonials } from "@/lib/data";
+import { fetchCategories, fetchProducts, fetchGalleryItems, fetchTestimonials } from "@/lib/data";
 import { buildGenericWhatsAppUrl } from "@/lib/utils";
 import { OCCASIONS, ROUTES } from "@/lib/constants";
 
@@ -12,10 +12,17 @@ export const metadata: Metadata = {
     "Beautifully designed and personalized keepsakes made to celebrate the moments that matter most. Custom photo frames, mugs, throw pillows, and event prints in Lagos.",
 };
 
-export default function HomePage() {
-  const featuredProducts = mockProducts.filter((p) => p.is_featured).slice(0, 3);
-  const galleryPreview = mockGalleryItems.filter((g) => g.is_published).slice(0, 6);
-  const publishedTestimonials = mockTestimonials.filter((t) => t.is_published).slice(0, 3);
+export default async function HomePage() {
+  const [categories, products, galleryItems, testimonials] = await Promise.all([
+    fetchCategories(),
+    fetchProducts(),
+    fetchGalleryItems(),
+    fetchTestimonials(),
+  ]);
+
+  const featuredProducts = products.filter((p) => p.is_featured).slice(0, 3);
+  const galleryPreview = galleryItems.filter((g) => g.is_published).slice(0, 6);
+  const publishedTestimonials = testimonials.filter((t) => t.is_published).slice(0, 3);
 
   return (
     <div className="flex flex-col">
@@ -188,7 +195,7 @@ export default function HomePage() {
           />
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-10">
-            {mockCategories.map((cat, i) => (
+            {categories.map((cat, i) => (
               <Link
                 key={cat.id}
                 href={`${ROUTES.products}?category=${cat.slug}`}

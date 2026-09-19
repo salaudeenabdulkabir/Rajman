@@ -18,6 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://rajmangraphics.com"),
   title: "Rajman Graphics Design and Print | Personalized Gifts, Frames, Mugs & Prints",
   description:
     "Rajman Graphics Design and Print creates personalized photo frames, custom mugs, throw pillows, gifts, and event prints designed to turn meaningful moments into lasting memories.",

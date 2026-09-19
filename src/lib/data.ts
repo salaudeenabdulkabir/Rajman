@@ -1,8 +1,9 @@
 // ============================================================
-// RAJMAN — Mock / Seed Data (used until Supabase is connected)
+// RAJMAN — Data Layer (Supabase with Local Fallbacks)
 // ============================================================
 
-import type { Category, Product, GalleryItem, Testimonial, SiteSettings, SocialLinks } from "./types";
+import type { Category, Product, GalleryItem, Testimonial, SiteSettings, SocialLinks, ContactMessage } from "./types";
+import { createClient as createBrowserSupabase } from "./supabase/client";
 
 export const mockCategories: Category[] = [
   {
@@ -42,13 +43,8 @@ export const mockCategories: Category[] = [
   },
 ];
 
-// Products will be empty until admin adds real ones
 export const mockProducts: Product[] = [];
-
-// Gallery will be empty until admin uploads real work
 export const mockGalleryItems: GalleryItem[] = [];
-
-// Testimonials will be empty until admin adds real reviews
 export const mockTestimonials: Testimonial[] = [];
 
 export const siteSettings: SiteSettings = {
@@ -72,5 +68,132 @@ export const siteSettings: SiteSettings = {
 
 export const socialLinks: SocialLinks = {
   whatsapp: "+2349160129087",
-  // instagram, facebook, tiktok, x — will be added via admin
 };
+
+// ============================================================
+// ASYNC SUPABASE DATA FETCHERS (WITH GRACEFUL FALLBACK)
+// ============================================================
+
+export async function fetchCategories(): Promise<Category[]> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return mockCategories;
+    }
+    return data as Category[];
+  } catch {
+    return mockCategories;
+  }
+}
+
+export async function fetchProducts(): Promise<Product[]> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { data, error } = await supabase
+      .from("products")
+      .select(`
+        *,
+        category:categories(*),
+        images:product_images(*)
+      `)
+      .eq("is_archived", false)
+      .eq("is_available", true)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      return mockProducts;
+    }
+    return data as unknown as Product[];
+  } catch {
+    return mockProducts;
+  }
+}
+
+export async function fetchProductBySlug(slug: string): Promise<Product | null> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { data, error } = await supabase
+      .from("products")
+      .select(`
+        *,
+        category:categories(*),
+        images:product_images(*)
+      `)
+      .eq("slug", slug)
+      .single();
+
+    if (error || !data) {
+      const fallback = mockProducts.find((p) => p.slug === slug);
+      return fallback || null;
+    }
+    return data as unknown as Product;
+  } catch {
+    return mockProducts.find((p) => p.slug === slug) || null;
+  }
+}
+
+export async function fetchGalleryItems(): Promise<GalleryItem[]> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { data, error } = await supabase
+      .from("gallery_items")
+      .select("*")
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true });
+
+    if (error || !data) {
+      return mockGalleryItems;
+    }
+    return data as GalleryItem[];
+  } catch {
+    return mockGalleryItems;
+  }
+}
+
+export async function fetchTestimonials(): Promise<Testimonial[]> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("*")
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true });
+
+    if (error || !data) {
+      return mockTestimonials;
+    }
+    return data as Testimonial[];
+  } catch {
+    return mockTestimonials;
+  }
+}
+
+export async function submitContactMessage(message: {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { error } = await supabase.from("contact_messages").insert({
+      name: message.name,
+      email: message.email,
+      phone: message.phone || null,
+      message: message.message,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to send message";
+    return { success: false, error: message };
+  }
+}

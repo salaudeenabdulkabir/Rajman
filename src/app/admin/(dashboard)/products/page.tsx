@@ -1,8 +1,15 @@
 import Link from "next/link";
 import AdminTopbar from "@/components/admin/AdminTopbar";
-import { mockProducts, mockCategories } from "@/lib/data";
+import { fetchProducts, fetchCategories } from "@/lib/data";
 
-export default function AdminProductsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminProductsPage() {
+  const [products, categories] = await Promise.all([
+    fetchProducts(),
+    fetchCategories(),
+  ]);
+
   return (
     <div>
       <AdminTopbar
@@ -18,7 +25,7 @@ export default function AdminProductsPage() {
         }
       />
 
-      {mockProducts.length > 0 ? (
+      {products.length > 0 ? (
         <div className="bg-white rounded-2xl border border-[#E5DDD4] overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-[#F7F3ED] border-b border-[#E5DDD4]">
@@ -31,8 +38,8 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5DDD4]">
-              {mockProducts.map((product) => {
-                const category = mockCategories.find((c) => c.id === product.category_id);
+              {products.map((product) => {
+                const category = product.category || categories.find((c) => c.id === product.category_id);
                 return (
                   <tr key={product.id} className="hover:bg-[#F7F3ED] transition-colors duration-150">
                     <td className="px-6 py-4">

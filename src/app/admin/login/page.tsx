@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { BRAND } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -14,10 +17,33 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setStatus("loading");
     setErrorMessage("");
-    // TODO: wire up Supabase Auth
-    await new Promise((r) => setTimeout(r, 800));
-    setStatus("error");
-    setErrorMessage("Admin login will be available once Supabase is connected.");
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setStatus("error");
+        setErrorMessage(error.message);
+        return;
+      }
+
+      if (data.session) {
+        setStatus("idle");
+        router.push("/admin");
+        router.refresh();
+      } else {
+        setStatus("error");
+        setErrorMessage("Unable to sign in. Please verify your credentials.");
+      }
+    } catch (err: unknown) {
+      setStatus("error");
+      const msg = err instanceof Error ? err.message : "An unexpected authentication error occurred.";
+      setErrorMessage(msg);
+    }
   }
 
   return (
@@ -74,7 +100,7 @@ export default function AdminLoginPage() {
             </div>
 
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
+              <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 leading-relaxed">
                 {errorMessage}
               </div>
             )}
@@ -92,7 +118,7 @@ export default function AdminLoginPage() {
         {/* Setup note */}
         <div className="mt-6 p-4 rounded-xl bg-[#EFE7DB] border border-[#E5DDD4]">
           <p className="text-xs text-[#6B6B6B] text-center leading-relaxed">
-            <strong className="text-[#C89B3C]">Setup needed:</strong> Connect Supabase to enable authentication. See the README for instructions.
+            <strong className="text-[#C89B3C]">Connected to Supabase:</strong> Authenticate with your Supabase admin user credentials.
           </p>
         </div>
       </div>

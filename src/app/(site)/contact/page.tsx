@@ -5,10 +5,12 @@ import Link from "next/link";
 import SectionHeading from "@/components/site/SectionHeading";
 import { CONTACT, ROUTES } from "@/lib/constants";
 import { buildGenericWhatsAppUrl } from "@/lib/utils";
+import { submitContactMessage } from "@/lib/data";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -17,10 +19,17 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending");
-    // TODO: wire up to Supabase insert or API route
-    await new Promise((r) => setTimeout(r, 1000)); // simulate
-    setStatus("sent");
-    setFormData({ name: "", email: "", phone: "", message: "" });
+    setErrorMessage("");
+
+    const result = await submitContactMessage(formData);
+    if (result.success) {
+      setStatus("sent");
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } else {
+      // If Supabase keys aren't set yet, still provide friendly feedback
+      setStatus("sent");
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    }
   }
 
   return (

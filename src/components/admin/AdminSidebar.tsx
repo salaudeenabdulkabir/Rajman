@@ -100,8 +100,8 @@ export default function AdminSidebar() {
         </ul>
       </nav>
 
-      {/* View Site */}
-      <div className="px-3 py-4 border-t border-white/10">
+      {/* View Site & Sign Out */}
+      <div className="px-3 py-4 border-t border-white/10 space-y-1">
         <Link
           href={ROUTES.home}
           target="_blank"
@@ -111,6 +111,21 @@ export default function AdminSidebar() {
           <ExternalLinkIcon />
           View Public Site
         </Link>
+        <button
+          type="button"
+          onClick={async () => {
+            const { createClient } = await import("@/lib/supabase/client");
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            window.location.href = "/admin/login";
+          }}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-red-400/70 hover:text-red-300 hover:bg-red-500/10 transition-all duration-150 text-left cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+          </svg>
+          Sign Out
+        </button>
       </div>
     </aside>
   );

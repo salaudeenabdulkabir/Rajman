@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { mockProducts } from "@/lib/data";
+import { fetchProductBySlug, fetchProducts } from "@/lib/data";
 import { buildProductWhatsAppUrl, buildGenericWhatsAppUrl } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 
@@ -9,17 +9,16 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return mockProducts.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params;
-  const product = mockProducts.find((p) => p.slug === slug && !p.is_archived);
+  const product = await fetchProductBySlug(slug);
 
-  if (!product) notFound();
+  if (!product || product.is_archived) notFound();
 
-  const relatedProducts = mockProducts
+  const allProducts = await fetchProducts();
+  const relatedProducts = allProducts
     .filter((p) => p.category_id === product.category_id && p.id !== product.id && !p.is_archived)
     .slice(0, 3);
 
